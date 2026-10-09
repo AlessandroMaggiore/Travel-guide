@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+from pathlib import Path
 
 import markdown_link_extractor
 
@@ -56,6 +57,9 @@ def wiki_link(filename, path):
             return True
     return False
 
+def folders_have_readme(path):
+    if path.is_dir():
+        return not bool(len(list(path.glob('readme.md', case_sensitive=False))))
 def analyse_files(path="./"):
     """
     Run over all the markdown files and find which ones are not linked
@@ -73,7 +77,7 @@ def analyse_files(path="./"):
         structure[mdfile] = {'link_parent': linked_from_parent(mdfile, path),
                              'external_link': wiki_link(mdfile, path)}
 
-    errors = {'link_parent':[], 'external_link':[]}
+    errors = {'link_parent':[], 'external_link':[], 'missing_readme': []}
     any_error = list()
     for key, val in structure.items():
         for error_missing in val.keys():
@@ -81,9 +85,16 @@ def analyse_files(path="./"):
                 errors[error_missing].append(key)
                 any_error.append(key)
 
+    all_visible = [f for f in Path(path).rglob('*') if not any([p for p in f.resolve().parts if p.startswith(".")])]
+    errors['missing_readme'] = list(map(lambda x: str(x.absolute())[len(str(Path(path).absolute()))+1:], filter(folders_have_readme, all_visible)))
     if any_error:
-        raise ValueError("Some files are not linked properly:\nmissing:\n" +
-                         json.dumps(errors, indent=4))
+        raise ValueError("Some files are not linked properly:\n\tpages missing links from parent pages:\n" +
+                         json.dumps(errors['link_parent'], indent=4) +
+                         "\n\tpages missing links to wikis:\n" +
+                         json.dumps(errors['external_link'], indent=4) +
+                         "\n\tfolders without index (readmes):\n" +
+                         json.dumps(errors['missing_readme'], indent=4)
+                         )
 
 if __name__ == "__main__":
     analyse_files()

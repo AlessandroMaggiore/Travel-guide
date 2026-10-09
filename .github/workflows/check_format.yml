@@ -10,16 +10,16 @@ jobs:
   Checks-format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: setup-python
         name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7
         with:
-          python-version: 3.8
+          python-version: 3.14
       - name: Install dependencies
-        uses: py-actions/py-dependency-install@v2
+        uses: py-actions/py-dependency-install@v4
         with:
           path: ".ci/requirements.txt"
       - name: Check files
